@@ -53,9 +53,11 @@
 
 <script>
     const tele = window.Telegram.WebApp;
+    // আপনার ফোনের বর্তমান IP (Termux-এ যা দেখাচ্ছে)
+    const serverUrl = "http://192.168.1.105:5000"; 
+    
     // User ID নিশ্চিত করা
-    const userId = tele.initDataUnsafe?.user?.id || "user_" + Math.floor(Math.random() * 9999);
-    const serverUrl = "http://192.168.1.105:5000"; // Termux IP
+    const userId = tele.initDataUnsafe?.user?.id ? String(tele.initDataUnsafe.user.id) : "guest_user";
 
     let ghPower = 50;
     let pendingDogs = 0.0;
@@ -66,7 +68,7 @@
     const dogsPerDayPer100k = 20000; 
     const dogsPerSecPer100k = dogsPerDayPer100k / 86400;
 
-    // সার্ভার থেকে ডাটা লোড
+    // ১. সার্ভার থেকে ডাটা লোড (অ্যাপ ওপেন হওয়ার সাথে সাথে)
     async function loadData() {
         try {
             const response = await fetch(`${serverUrl}/get_data?id=${userId}`);
@@ -74,14 +76,20 @@
             if (data && data.id) {
                 walletBalance = parseFloat(data.dogs) || 0;
                 referrals = parseInt(data.ref_count) || 0;
+                // GH Power ক্যালকুলেশন: বেস ৫০ + রেফার বোনাস + অন্যান্য বোনাস
                 ghPower = 50 + (referrals * 200) + (parseInt(data.bonus_gh) || 0);
                 updateUI();
+                console.log("Data loaded from Termux Server!");
             }
-        } catch (e) { console.log("Offline mode"); }
+        } catch (e) { 
+            console.log("Server not found. Check if Termux is running."); 
+        }
     }
 
-    // অটো সেভ ফাংশন
+    // ২. সার্ভারে ডাটা সেভ করার ফাংশন
     async function autoSave() {
+        if (userId === "guest_user") return;
+        
         const bonus = ghPower - (referrals * 200) - 50;
         const body = { 
             id: userId, 
@@ -95,10 +103,13 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body)
             });
-        } catch (e) { }
+            console.log("Auto-save successful!");
+        } catch (e) { 
+            console.log("Auto-save failed. Is Termux running?");
+        }
     }
 
-    // মাইনিং ইঞ্জিন
+    // ৩. মাইনিং ইঞ্জিন
     setInterval(() => {
         let earned = (ghPower / 100000) * dogsPerSecPer100k;
         pendingDogs += earned;
@@ -111,12 +122,13 @@
         document.getElementById('wallet-val').innerText = walletBalance.toFixed(2);
     }
 
+    // ক্লেইম করলে সাথে সাথে সেভ হবে
     function claimRewards() {
         if (pendingDogs > 0.0001) {
             walletBalance += pendingDogs;
             pendingDogs = 0;
             updateUI();
-            autoSave();
+            autoSave(); // সাথে সাথে সার্ভারে সেভ
             alert("Success: Balance added to wallet!");
         }
     }
@@ -146,7 +158,6 @@
         }
     }
 
-    // আপনার বটের ইউজারনেম সেট করা হয়েছে
     function copyReferral() {
         const botUsername = "freeDOGSminer_bot"; 
         const link = `https://t.me/${botUsername}?start=${userId}`;
@@ -188,12 +199,11 @@
     window.onload = () => {
         tele.ready();
         tele.expand();
-        loadData(); // অ্যাপ ওপেন হলে ডাটাবেস থেকে ব্যালেন্স আনবে
-        setInterval(autoSave, 20000); // ২০ সেকেন্ড পরপর অটো সেভ
+        loadData(); // অ্যাপ ওপেন হলে সার্ভার থেকে পুরনো ব্যালেন্স আনবে
+        setInterval(autoSave, 15000); // ১৫ সেকেন্ড পরপর অটো ব্যাকআপ
     };
 
-    window.onbeforeunload = autoSave;
 </script>
 
 </body>
-</html>
+    </html>
