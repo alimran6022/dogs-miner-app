@@ -30,7 +30,7 @@
 
 <div class="header">
     <span>Status: 🟢 Mining</span>
-    <button onclick="window.open('https://t.me/your_channel','_blank')" style="padding:5px 10px; font-size:12px;">Payment Proof</button>
+    <button onclick="window.open('https://t.me/freeDOGSminer_bot','_blank')" style="padding:5px 10px; font-size:12px;">Payment Channel</button>
 </div>
 
 <div class="balance-box">
@@ -53,8 +53,9 @@
 
 <script>
     const tele = window.Telegram.WebApp;
-    const userId = tele.initDataUnsafe?.user?.id || "guest_user";
-    const serverUrl = "http://192.168.1.105:5000"; // আপনার Termux IP
+    // User ID নিশ্চিত করা
+    const userId = tele.initDataUnsafe?.user?.id || "user_" + Math.floor(Math.random() * 9999);
+    const serverUrl = "http://192.168.1.105:5000"; // Termux IP
 
     let ghPower = 50;
     let pendingDogs = 0.0;
@@ -62,31 +63,31 @@
     let lastClaimTime = 0;
     let referrals = 0;
 
-    // মাইনিং ক্যালকুলেশন
     const dogsPerDayPer100k = 20000; 
     const dogsPerSecPer100k = dogsPerDayPer100k / 86400;
 
-    // ১. সার্ভার থেকে ডাটা লোড করা
+    // সার্ভার থেকে ডাটা লোড
     async function loadData() {
         try {
             const response = await fetch(`${serverUrl}/get_data?id=${userId}`);
             const data = await response.json();
-            if (data) {
+            if (data && data.id) {
                 walletBalance = parseFloat(data.dogs) || 0;
                 referrals = parseInt(data.ref_count) || 0;
-                ghPower = 50 + (referrals * 200) + (data.bonus_gh || 0);
+                ghPower = 50 + (referrals * 200) + (parseInt(data.bonus_gh) || 0);
                 updateUI();
             }
-        } catch (e) { console.log("Load failed. Playing offline."); }
+        } catch (e) { console.log("Offline mode"); }
     }
 
-    // ২. সার্ভারে ডাটা সেভ করা
+    // অটো সেভ ফাংশন
     async function autoSave() {
+        const bonus = ghPower - (referrals * 200) - 50;
         const body = { 
             id: userId, 
             dogs: walletBalance, 
             ref_count: referrals,
-            bonus_gh: ghPower - (referrals * 200) - 50 
+            bonus_gh: bonus > 0 ? bonus : 0 
         };
         try {
             await fetch(`${serverUrl}/update`, {
@@ -94,10 +95,10 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body)
             });
-            console.log("Auto-Saved!");
-        } catch (e) { console.error("Save failed."); }
+        } catch (e) { }
     }
 
+    // মাইনিং ইঞ্জিন
     setInterval(() => {
         let earned = (ghPower / 100000) * dogsPerSecPer100k;
         pendingDogs += earned;
@@ -111,12 +112,12 @@
     }
 
     function claimRewards() {
-        if (pendingDogs > 0.00001) {
+        if (pendingDogs > 0.0001) {
             walletBalance += pendingDogs;
             pendingDogs = 0;
             updateUI();
             autoSave();
-            alert("Balance Claimed to Wallet!");
+            alert("Success: Balance added to wallet!");
         }
     }
 
@@ -127,7 +128,7 @@
             lastClaimTime = now;
             updateUI();
             autoSave();
-            alert("5 GH Bonus Added!");
+            alert("Bonus: +5 GH added!");
         }
     }
 
@@ -145,11 +146,12 @@
         }
     }
 
+    // আপনার বটের ইউজারনেম সেট করা হয়েছে
     function copyReferral() {
-        const botUsername = "আপনার_বটের_ইউজারনেম"; // এখানে আপনার বটের ইউজারনেম দিন
+        const botUsername = "freeDOGSminer_bot"; 
         const link = `https://t.me/${botUsername}?start=${userId}`;
         navigator.clipboard.writeText(link).then(() => {
-            alert("Referral Link Copied!\nShare this with friends to get 200 GH/s.");
+            alert("Referral Link Copied!");
         });
     }
 
@@ -166,7 +168,7 @@
             ghPower += won;
             updateUI();
             autoSave();
-            alert("You won " + won + " GH Power!");
+            alert("Spin Win: " + won + " GH Power!");
             document.getElementById('wheel').style.transform = `rotate(0deg)`;
             closePopup('spin-popup');
         }, 3100);
@@ -174,10 +176,10 @@
 
     function processWithdraw() {
         let addr = document.getElementById('wallet-addr').value;
-        if(addr.length < 10) return alert("Invalid Address");
-        if(walletBalance < 100) return alert("Minimum 100 DOGS required");
-        alert("Withdrawal Requested!");
-        walletBalance -= 100; // টেস্ট হিসেবে ১০০ কাটলো
+        if(addr.length < 10) return alert("Error: Invalid Wallet Address");
+        if(walletBalance < 100) return alert("Error: Minimum 100 DOGS required");
+        alert("Success: Withdrawal Request Sent!");
+        walletBalance -= 100;
         updateUI();
         autoSave();
         closePopup('withdraw-popup');
@@ -186,11 +188,12 @@
     window.onload = () => {
         tele.ready();
         tele.expand();
-        loadData();
-        setInterval(autoSave, 20000); // প্রতি ২০ সেকেন্ডে অটো সেভ
+        loadData(); // অ্যাপ ওপেন হলে ডাটাবেস থেকে ব্যালেন্স আনবে
+        setInterval(autoSave, 20000); // ২০ সেকেন্ড পরপর অটো সেভ
     };
 
     window.onbeforeunload = autoSave;
 </script>
+
 </body>
 </html>
