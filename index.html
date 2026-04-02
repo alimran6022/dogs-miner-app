@@ -48,35 +48,55 @@
     <button class="btn-full btn-withdraw" onclick="openWithdraw()">💰 Withdraw (TON Network)</button>
 </div>
 
-<div id="spin-popup" class="popup">
-    <div class="popup-content">
-        <h2 style="color:#f3ba2f">Lucky Spin</h2>
-        <div id="wheel">?</div>
-        <button onclick="startSpin()" id="spin-btn" style="width:100%">Watch Ad & Spin</button>
-        <button onclick="closePopup('spin-popup')" style="background:none; color:red; margin-top:10px;">Close</button>
-    </div>
-</div>
-
-<div id="withdraw-popup" class="popup">
-    <div class="popup-content">
-        <h2 style="color:#f3ba2f">Withdraw</h2>
-        <p style="font-size:12px;">Min: 100 DOGS | Fee: 10 DOGS</p>
-        <input type="text" id="wallet-addr" placeholder="Enter TON Wallet Address">
-        <button onclick="processWithdraw()" style="width:100%">Submit Withdrawal</button>
-        <button onclick="closePopup('withdraw-popup')" style="background:none; color:red; margin-top:10px;">Cancel</button>
-    </div>
-</div>
+<div id="spin-popup" class="popup"><div class="popup-content"><h2 style="color:#f3ba2f">Lucky Spin</h2><div id="wheel">?</div><button onclick="startSpin()" id="spin-btn" style="width:100%">Watch Ad & Spin</button><button onclick="closePopup('spin-popup')" style="background:none; color:red; margin-top:10px;">Close</button></div></div>
+<div id="withdraw-popup" class="popup"><div class="popup-content"><h2 style="color:#f3ba2f">Withdraw</h2><p style="font-size:12px;">Min: 100 DOGS | Fee: 10 DOGS</p><input type="text" id="wallet-addr" placeholder="Enter TON Wallet Address"><button onclick="processWithdraw()" style="width:100%">Submit Withdrawal</button><button onclick="closePopup('withdraw-popup')" style="background:none; color:red; margin-top:10px;">Cancel</button></div></div>
 
 <script>
+    const tele = window.Telegram.WebApp;
+    const userId = tele.initDataUnsafe?.user?.id || "guest_user";
+    const serverUrl = "http://192.168.1.105:5000"; // আপনার Termux IP
+
     let ghPower = 50;
     let pendingDogs = 0.0;
     let walletBalance = 0.0;
     let lastClaimTime = 0;
+    let referrals = 0;
 
-    // --- UPDATED CALCULATION ---
-    // 100k GH = 20,000 DOGS (Daily)
+    // মাইনিং ক্যালকুলেশন
     const dogsPerDayPer100k = 20000; 
     const dogsPerSecPer100k = dogsPerDayPer100k / 86400;
+
+    // ১. সার্ভার থেকে ডাটা লোড করা
+    async function loadData() {
+        try {
+            const response = await fetch(`${serverUrl}/get_data?id=${userId}`);
+            const data = await response.json();
+            if (data) {
+                walletBalance = parseFloat(data.dogs) || 0;
+                referrals = parseInt(data.ref_count) || 0;
+                ghPower = 50 + (referrals * 200) + (data.bonus_gh || 0);
+                updateUI();
+            }
+        } catch (e) { console.log("Load failed. Playing offline."); }
+    }
+
+    // ২. সার্ভারে ডাটা সেভ করা
+    async function autoSave() {
+        const body = { 
+            id: userId, 
+            dogs: walletBalance, 
+            ref_count: referrals,
+            bonus_gh: ghPower - (referrals * 200) - 50 
+        };
+        try {
+            await fetch(`${serverUrl}/update`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            console.log("Auto-Saved!");
+        } catch (e) { console.error("Save failed."); }
+    }
 
     setInterval(() => {
         let earned = (ghPower / 100000) * dogsPerSecPer100k;
@@ -95,31 +115,29 @@
             walletBalance += pendingDogs;
             pendingDogs = 0;
             updateUI();
-            alert("Balance Claimed Successfully!");
+            autoSave();
+            alert("Balance Claimed to Wallet!");
         }
     }
 
     function hourlyClaim() {
         const now = Date.now();
-        const oneHour = 3600000;
-        if (now - lastClaimTime >= oneHour) {
+        if (now - lastClaimTime >= 3600000) {
             ghPower += 5;
             lastClaimTime = now;
             updateUI();
-            alert("5 GH Added!");
+            autoSave();
+            alert("5 GH Bonus Added!");
         }
     }
 
     function updateTimer() {
         const hourlyBtn = document.getElementById('hourly-btn');
-        const now = Date.now();
-        const oneHour = 3600000;
-        const timeLeft = oneHour - (now - lastClaimTime);
-
+        const timeLeft = 3600000 - (Date.now() - lastClaimTime);
         if (lastClaimTime !== 0 && timeLeft > 0) {
             hourlyBtn.disabled = true;
-            let mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            let secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            let mins = Math.floor(timeLeft / 60000);
+            let secs = Math.floor((timeLeft % 60000) / 1000);
             hourlyBtn.innerText = `⏳ ${mins}m ${secs}s`;
         } else {
             hourlyBtn.disabled = false;
@@ -128,9 +146,11 @@
     }
 
     function copyReferral() {
-        alert("Referral Link Copied! (Simulated)\nYou received 200 GH Bonus.");
-        ghPower += 200;
-        updateUI();
+        const botUsername = "আপনার_বটের_ইউজারনেম"; // এখানে আপনার বটের ইউজারনেম দিন
+        const link = `https://t.me/${botUsername}?start=${userId}`;
+        navigator.clipboard.writeText(link).then(() => {
+            alert("Referral Link Copied!\nShare this with friends to get 200 GH/s.");
+        });
     }
 
     function openSpin() { document.getElementById('spin-popup').style.display = 'flex'; }
@@ -145,8 +165,10 @@
             let won = wins[Math.floor(Math.random() * wins.length)];
             ghPower += won;
             updateUI();
-            alert("You won " + won + " GH!");
+            autoSave();
+            alert("You won " + won + " GH Power!");
             document.getElementById('wheel').style.transform = `rotate(0deg)`;
+            closePopup('spin-popup');
         }, 3100);
     }
 
@@ -154,11 +176,21 @@
         let addr = document.getElementById('wallet-addr').value;
         if(addr.length < 10) return alert("Invalid Address");
         if(walletBalance < 100) return alert("Minimum 100 DOGS required");
-        alert("Withdrawal Requested to " + addr);
-        walletBalance = 0;
+        alert("Withdrawal Requested!");
+        walletBalance -= 100; // টেস্ট হিসেবে ১০০ কাটলো
         updateUI();
+        autoSave();
         closePopup('withdraw-popup');
     }
+
+    window.onload = () => {
+        tele.ready();
+        tele.expand();
+        loadData();
+        setInterval(autoSave, 20000); // প্রতি ২০ সেকেন্ডে অটো সেভ
+    };
+
+    window.onbeforeunload = autoSave;
 </script>
 </body>
 </html>
