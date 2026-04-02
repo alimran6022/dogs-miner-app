@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Dogs Coin Miner</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #000; color: white; text-align: center; margin: 0; padding-bottom: 80px; }
+        .header { background: #1a1a1a; padding: 15px; border-bottom: 2px solid #f3ba2f; display: flex; justify-content: space-between; align-items: center; }
+        .balance-box { background: linear-gradient(180deg, #121212, #222); padding: 20px; border-radius: 20px; margin: 15px; border: 1px solid #f3ba2f; }
+        .gh-display { color: #f3ba2f; font-size: 22px; font-weight: bold; }
+        .pending-box { font-size: 28px; color: #f3ba2f; font-weight: bold; margin: 10px 0; }
+        .wallet-box { font-size: 18px; color: #fff; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 15px; }
+        button { background: #f3ba2f; color: black; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-claim { background: #00ff00; padding: 8px 20px; margin-top: 5px; border-radius: 8px; font-size: 14px; }
+        .btn-full { grid-column: span 2; margin-top: 5px; }
+        .btn-refer { background: #1da1f2; color: white; }
+        .btn-withdraw { background: #2b2b2b; color: #f3ba2f; border: 1px solid #f3ba2f; }
+        button:disabled { background: #555; color: #aaa; cursor: not-allowed; }
+
+        .popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        .popup-content { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 2px solid #f3ba2f; width: 85%; text-align: center; }
+        input { width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px; margin: 10px 0; box-sizing: border-box; }
+        #wheel { width: 120px; height: 120px; border: 5px dashed #f3ba2f; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 3s cubic-bezier(0.1, 0, 0.1, 1); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <span>Status: 🟢 Mining</span>
+    <button onclick="window.open('https://t.me/your_channel','_blank')" style="padding:5px 10px; font-size:12px;">Payment Proof</button>
+</div>
+
+<div class="balance-box">
+    <p style="margin:0;">Mining Power: <span class="gh-display" id="gh-val">50</span> GH</p>
+    <p style="font-size: 11px; color: #aaa; margin-top: 10px;">Pending DOGS</p>
+    <div class="pending-box" id="pending-dogs">0.000000</div>
+    <button class="btn-claim" onclick="claimRewards()">Claim to Wallet</button>
+    <div class="wallet-box">Wallet Balance: <span id="wallet-val">0.00</span> DOGS</div>
+</div>
+
+<div class="btn-grid">
+    <button id="hourly-btn" onclick="hourlyClaim()">🎁 Hourly Free (5 GH)</button>
+    <button onclick="openSpin()">🎡 Lucky Spin (1 Ad)</button>
+    <button class="btn-full btn-refer" onclick="copyReferral()">👥 Refer Friend (+200 GH)</button>
+    <button class="btn-full btn-withdraw" onclick="openWithdraw()">💰 Withdraw (TON Network)</button>
+</div>
+
+<div id="spin-popup" class="popup">
+    <div class="popup-content">
+        <h2 style="color:#f3ba2f">Lucky Spin</h2>
+        <div id="wheel">?</div>
+        <button onclick="startSpin()" id="spin-btn" style="width:100%">Watch Ad & Spin</button>
+        <button onclick="closePopup('spin-popup')" style="background:none; color:red; margin-top:10px;">Close</button>
+    </div>
+</div>
+
+<div id="withdraw-popup" class="popup">
+    <div class="popup-content">
+        <h2 style="color:#f3ba2f">Withdraw</h2>
+        <p style="font-size:12px;">Min: 100 DOGS | Fee: 10 DOGS</p>
+        <input type="text" id="wallet-addr" placeholder="Enter TON Wallet Address">
+        <button onclick="processWithdraw()" style="width:100%">Submit Withdrawal</button>
+        <button onclick="closePopup('withdraw-popup')" style="background:none; color:red; margin-top:10px;">Cancel</button>
+    </div>
+</div>
+
+<script>
+    let ghPower = 50;
+    let pendingDogs = 0.0;
+    let walletBalance = 0.0;
+    let lastClaimTime = 0;
+
+    // --- UPDATED CALCULATION ---
+    // 100k GH = 20,000 DOGS (Daily)
+    const dogsPerDayPer100k = 20000; 
+    const dogsPerSecPer100k = dogsPerDayPer100k / 86400;
+
+    setInterval(() => {
+        let earned = (ghPower / 100000) * dogsPerSecPer100k;
+        pendingDogs += earned;
+        document.getElementById('pending-dogs').innerText = pendingDogs.toFixed(6);
+        updateTimer();
+    }, 1000);
+
+    function updateUI() {
+        document.getElementById('gh-val').innerText = ghPower;
+        document.getElementById('wallet-val').innerText = walletBalance.toFixed(2);
+    }
+
+    function claimRewards() {
+        if (pendingDogs > 0.00001) {
+            walletBalance += pendingDogs;
+            pendingDogs = 0;
+            updateUI();
+            alert("Balance Claimed Successfully!");
+        }
+    }
+
+    function hourlyClaim() {
+        const now = Date.now();
+        const oneHour = 3600000;
+        if (now - lastClaimTime >= oneHour) {
+            ghPower += 5;
+            lastClaimTime = now;
+            updateUI();
+            alert("5 GH Added!");
+        }
+    }
+
+    function updateTimer() {
+        const hourlyBtn = document.getElementById('hourly-btn');
+        const now = Date.now();
+        const oneHour = 3600000;
+        const timeLeft = oneHour - (now - lastClaimTime);
+
+        if (lastClaimTime !== 0 && timeLeft > 0) {
+            hourlyBtn.disabled = true;
+            let mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            let secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            hourlyBtn.innerText = `⏳ ${mins}m ${secs}s`;
+        } else {
+            hourlyBtn.disabled = false;
+            hourlyBtn.innerText = "🎁 Hourly Free (5 GH)";
+        }
+    }
+
+    function copyReferral() {
+        alert("Referral Link Copied! (Simulated)\nYou received 200 GH Bonus.");
+        ghPower += 200;
+        updateUI();
+    }
+
+    function openSpin() { document.getElementById('spin-popup').style.display = 'flex'; }
+    function openWithdraw() { document.getElementById('withdraw-popup').style.display = 'flex'; }
+    function closePopup(id) { document.getElementById(id).style.display = 'none'; }
+
+    function startSpin() {
+        let deg = Math.floor(Math.random() * 360) + 1440;
+        document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
+        setTimeout(() => {
+            let wins = [1, 2, 5, 10, 15];
+            let won = wins[Math.floor(Math.random() * wins.length)];
+            ghPower += won;
+            updateUI();
+            alert("You won " + won + " GH!");
+            document.getElementById('wheel').style.transform = `rotate(0deg)`;
+        }, 3100);
+    }
+
+    function processWithdraw() {
+        let addr = document.getElementById('wallet-addr').value;
+        if(addr.length < 10) return alert("Invalid Address");
+        if(walletBalance < 100) return alert("Minimum 100 DOGS required");
+        alert("Withdrawal Requested to " + addr);
+        walletBalance = 0;
+        updateUI();
+        closePopup('withdraw-popup');
+    }
+</script>
+</body>
+</html>
