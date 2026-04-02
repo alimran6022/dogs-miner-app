@@ -110,62 +110,6 @@
         document.getElementById('wallet-val').innerText = walletBalance.toFixed(2);
     }
 
- <script>
-    const tele = window.Telegram.WebApp;
-    const userId = tele.initDataUnsafe?.user?.id || "guest_user";
-    const serverUrl = "http://192.168.1.105:5000"; // আপনার Termux IP
-
-    let ghPower = 50;
-    let pendingDogs = 0.0;
-    let walletBalance = 0.0;
-    let lastClaimTime = 0;
-    let referrals = 0;
-
-    const dogsPerDayPer100k = 20000; 
-    const dogsPerSecPer100k = dogsPerDayPer100k / 86400;
-
-    // ১. ডাটা লোড করার ফাংশন (এটি ব্যালেন্স ফিরে পেতে সাহায্য করে)
-    async function loadData() {
-        try {
-            const response = await fetch(`${serverUrl}/get_data?id=${userId}`);
-            const data = await response.json();
-            if (data) {
-                walletBalance = parseFloat(data.dogs) || 0;
-                referrals = parseInt(data.ref_count) || 0;
-                // পাওয়ার ক্যালকুলেশন: ৫০ + (রেফার * ২০০) + বোনাস
-                ghPower = 50 + (referrals * 200) + (data.bonus_gh || 0);
-                updateUI();
-            }
-        } catch (e) { console.log("Load failed"); }
-    }
-
-    // ২. অটো সেভ ফাংশন
-    async function autoSave() {
-        const body = { 
-            id: userId, 
-            dogs: walletBalance, 
-            ref_count: referrals,
-            bonus_gh: ghPower - (referrals * 200) - 50 
-        };
-        try {
-            await fetch(`${serverUrl}/update`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            });
-        } catch (e) { }
-    }
-
-    // বাকি সব ফাংশন (claimRewards, startSpin ইত্যাদি) নিচে থাকবে...
-
-    window.onload = () => {
-        tele.ready();
-        tele.expand();
-        loadData(); // অ্যাপ ওপেন হলেই ডাটা লোড হবে
-        setInterval(autoSave, 20000); // ২০ সেকেন্ড পরপর সেভ হবে
-    }
-    
-</script>
     function claimRewards() {
         if (pendingDogs > 0.00001) {
             walletBalance += pendingDogs;
