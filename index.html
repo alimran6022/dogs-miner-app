@@ -21,7 +21,7 @@
     <button onclick="handleAuth('login')" style="background:orange; padding:10px 20px; border-radius:5px;">Login</button>
     <p style="color:gray; font-size:12px; margin-top:10px;" onclick="handleAuth('signup')">New user? Create Account</p>
 </div>
-
+    
     <div class="header">
         <h1>DOGS MINER</h1>
     </div>
@@ -50,6 +50,11 @@
         <button class="btn" style="background:red;" onclick="closePopup('withdraw-popup')">Close</button>
     </div>
 
+    <p>Pending: <span id="pending-balance">0.0000</span> DOGS</p>
+
+<button onclick="claimDogs()" style="background: green; color: white; padding: 10px; border-radius: 5px; border: none; margin-bottom: 10px;">Claim Mining</button>
+
+<button onclick="processWithdraw()" style="background: blue; color: white; padding: 10px; border-radius: 5px; border: none;">Withdraw 50 DOGS</button>
     <script>
         let dogsBalance = 0;
         let ghPower = 100; // Starting Power
@@ -79,13 +84,56 @@
             document.getElementById('dogs-balance').innerText = dogsBalance.toFixed(4);
         }, 1000);
 
+        // এই ফাংশনটি স্ক্রিনে সব সংখ্যা আপডেট করে
+function updateUI() {
+    // মেইন ব্যালেন্স আপডেট
+    document.getElementById('dogs-balance').innerText = dogsBalance.toFixed(4);
+    
+    // মাইনিং পাওয়ার আপডেট
+    document.getElementById('gh-power').innerText = ghPower;
+    
+    // রেফারেল কাউন্ট আপডেট
+    document.getElementById('ref-count').innerText = refCount;
+    
+    // পেন্ডিং ব্যালেন্স আপডেট (যদি HTML-এ পেন্ডিং আইডি থাকে)
+    if(document.getElementById('pending-balance')) {
+        document.getElementById('pending-balance').innerText = pendingBalance.toFixed(4);
+    }
+}
+
         function startSpin() {
             // Later we will add Ad here
             let wheel = document.getElementById('wheel');
             let randomDeg = Math.floor(Math.random() * 360) + 1800;
             wheel.style.transform = `rotate(${randomDeg}deg)`;
-            
-            setTimeout(() => {
+
+            let pendingBalance = 0; 
+
+function claimDogs() {
+    if (pendingBalance > 0) {
+        dogsBalance += pendingBalance;
+        pendingBalance = 0;
+        updateUI();
+        autoSave();
+        alert("Claim Successful!");
+    } else {
+        alert("Nothing to claim!");
+    }
+}
+
+function processWithdraw() {
+    let amount = 50; 
+    if (dogsBalance >= amount) {
+        dogsBalance -= amount;
+        updateUI();
+        autoSave();
+        alert("Withdrawal Request Sent! 50 DOGS deducted.");
+    } else {
+        alert("Insufficient Balance!");
+    }
+}
+
+/     setTimeout(() => {
                 let wins = [1, 2, 5, 10, 15];
                 let wonVal = wins[Math.floor(Math.random() * wins.length)];
                 ghPower += wonVal;
