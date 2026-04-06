@@ -3,172 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dogs Miner Pro + Spin</title>
+    <title>Dogs Miner Pro - Nasim Edition</title>
     <style>
-        body { background-color: #111; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; }
-        .container { padding: 20px; }
-        .balance-card { background: linear-gradient(145deg, #222, #333); padding: 20px; border-radius: 20px; margin: 20px; border: 1px solid orange; box-shadow: 0 5px 15px rgba(255,165,0,0.2); }
-        #dogs-balance { font-size: 35px; color: orange; font-weight: bold; text-shadow: 0 0 10px rgba(255,165,0,0.5); }
-        button { width: 85%; padding: 15px; margin: 10px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
-        .btn-claim { background: #28a745; color: white; }
-        .btn-spin { background: #fd7e14; color: white; }
-        .btn-withdraw { background: #007bff; color: white; }
-        .btn-login { background: orange; color: white; margin-top: 20px; }
-        input { width: 85%; padding: 15px; margin: 10px; border-radius: 10px; border: none; background: #222; color: white; }
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spin-result { font-weight: bold; color: yellow; margin-top: 10px; min-height: 20px; }
+        body { background-color: #0b0b0b; color: white; font-family: sans-serif; text-align: center; margin: 0; }
+        .container { padding: 15px; }
+        .balance-card { background: linear-gradient(145deg, #1a1a1a, #2a2a2a); padding: 20px; border-radius: 20px; margin: 15px; border: 1px solid #f39c12; }
+        #dogs-balance { font-size: 35px; color: #f39c12; font-weight: bold; }
+        button { width: 95%; padding: 15px; margin: 8px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-claim { background: #27ae60; color: white; }
+        .btn-ad { background: #8e44ad; color: white; }
+        .btn-spin { background: #e67e22; color: white; }
+        .btn-ref { background: #34495e; color: white; }
+        input { width: 85%; padding: 15px; margin: 10px; border-radius: 10px; background: #222; color: white; border: 1px solid #444; }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <h2 style="color: orange;">Dogs Miner Login</h2>
-        <p style="color: #bbb;">Login to save your balance forever</p>
-        <input type="email" id="email" placeholder="Email Address">
-        <input type="password" id="password" placeholder="Secret Password">
-        <button class="btn-login" onclick="handleAuth()">LOGIN / SIGNUP</button>
-        <p id="auth-msg" style="color: red; font-size: 14px;"></p>
+    <div id="login-screen" style="display: none;">
+        <h2 style="color: #f39c12;">Dogs Miner Login</h2>
+        <input type="email" id="email" placeholder="Enter Email">
+        <input type="password" id="password" placeholder="Enter Password">
+        <button style="background: #f39c12; color: white;" onclick="handleAuth()">START MINING</button>
     </div>
 
     <div class="container">
-        <h1 style="letter-spacing: 2px;">DOGS MINER PRO</h1>
+        <h2 style="color: #f39c12;">DOGS MINER PRO</h2>
         
         <div class="balance-card">
-            <p style="margin: 0; color: #aaa;">Your Total Balance</p>
+            <p style="margin:0;">Total Balance</p>
             <div id="dogs-balance">0.0000</div>
-            <p style="font-size: 14px; color: #888; margin-top: 10px;">Pending Mining: <span id="pending-balance" style="color: #00ff00;">0.0000</span> DOGS</p>
+            <p style="font-size: 13px; color: #27ae60;">Mining: +<span id="pending-balance">0.0000</span></p>
         </div>
 
-        <div style="background: #222; padding: 15px; border-radius: 15px; margin: 20px; display: flex; justify-content: space-around;">
-            <div>⚡ <span id="gh-power">100</span> GH/s</div>
-            <div>👥 <span id="ref-count">0</span> Ref</div>
+        <div style="background: #222; padding: 10px; border-radius: 10px; margin: 10px; display: flex; justify-content: space-around;">
+            <span>⚡ <b id="gh-power">100</b> GH/s</span>
+            <span>🎡 <b id="spin-count">0</b> Spins</span>
         </div>
 
-        <div style="background: #1a1a1a; padding: 15px; border-radius: 15px; border: 1px dashed #555;">
-            <h3>🎡 Lucky Spin</h3>
-            <p id="spin-msg" class="spin-result"></p>
-            <button class="btn-spin" id="spin-btn" onclick="luckySpin()">SPIN NOW (Free)</button>
-        </div>
-
-        <button class="btn-claim" onclick="claimDogs()" style="margin-top: 25px;">CLAIM MINING</button>
-        <button class="btn-withdraw" onclick="processWithdraw()">WITHDRAW (Min 50)</button>
+        <button class="btn-ad" onclick="watchAd()">📺 WATCH AD (Get 1 Spin)</button>
+        <button class="btn-spin" onclick="luckySpin()">🎰 SPIN (Win GH Power)</button>
+        <button class="btn-claim" onclick="claimDogs()">📥 CLAIM DOGS</button>
+        <button class="btn-ref" onclick="copyRef()">🔗 COPY REFERRAL LINK</button>
         
-        <p style="color: #555; font-size: 12px; margin-top: 20px;">Safe Server Sync: <span id="sync-status" style="color: green;">Online</span></p>
+        <p id="msg" style="color: yellow; font-size: 14px; margin-top: 10px;"></p>
     </div>
 
     <script>
-        const SERVER_URL = "https://dogs-miner-app.onrender.com"; 
-        let userId = "";
+        const SERVER_URL = "https://dogs-miner-app.onrender.com";
+        let userId = localStorage.getItem('dogs_user_id') || "";
         let dogsBalance = 0;
         let pendingBalance = 0;
         let ghPower = 100;
-        let refCount = 0;
+        let spinCount = 0;
 
-        // --- লগইন এবং ডাটা লোড ---
+        window.onload = function() {
+            if (userId === "") document.getElementById('login-screen').style.display = 'flex';
+            else loadUserData();
+        };
+
         function handleAuth() {
             const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            if (email.includes('@') && password.length >= 6) {
-                userId = email.replace(/[^a-zA-Z0-9]/g, ""); 
+            if (email.includes('@')) {
+                userId = email.replace(/[^a-zA-Z0-9]/g, "");
+                localStorage.setItem('dogs_user_id', userId);
                 document.getElementById('login-screen').style.display = 'none';
-                loadUserData(); 
-            } else {
-                document.getElementById('auth-msg').innerText = "ইমেইল ও পাসওয়ার্ড (৬ অক্ষর) সঠিক দিন!";
+                loadUserData();
             }
         }
 
-        // --- লাকি স্পিন লজিক ---
-        function luckySpin() {
-            const btn = document.getElementById('spin-btn');
-            const msg = document.getElementById('spin-msg');
-            btn.disabled = true;
-            msg.innerText = "Spinning...";
-
+        function watchAd() {
+            document.getElementById('msg').innerText = "Loading Ad...";
             setTimeout(() => {
-                const prizes = [0.1, 0.5, 1, 0, 2, 0.05, 5]; // সম্ভাব্য উইনিং পয়েন্ট
-                const win = prizes[Math.floor(Math.random() * prizes.length)];
-                
-                if (win > 0) {
-                    dogsBalance += win;
-                    msg.innerText = "Congratulations! You won " + win + " DOGS!";
-                } else {
-                    msg.innerText = "Better luck next time!";
-                }
-                
+                spinCount += 1;
                 updateUI();
                 autoSave();
-                
-                // পরবর্তী স্পিন ১০ মিনিট পর
-                setTimeout(() => { btn.disabled = false; msg.innerText = ""; }, 600000); 
-            }, 2000);
+                document.getElementById('msg').innerText = "Ad Finished! You got 1 Lucky Spin.";
+            }, 3000);
         }
 
-        // --- মাইনিং লজিক ---
+        function luckySpin() {
+            if (spinCount > 0) {
+                spinCount--;
+                const ghPrizes = [15, 10, 5, 2];
+                const winGH = ghPrizes[Math.floor(Math.random() * ghPrizes.length)];
+                ghPower += winGH;
+                updateUI();
+                autoSave();
+                document.getElementById('msg').innerText = "Won " + winGH + " GH Power!";
+            } else {
+                alert("No spins! Watch an Ad first.");
+            }
+        }
+
         setInterval(() => {
             if (userId !== "") {
-                let dogsPerSec = (ghPower / 1500000); 
+                let dogsPerSec = (ghPower / 100000) * (20000 / 86400); 
                 pendingBalance += dogsPerSec;
                 updateUI();
             }
         }, 1000);
 
         function claimDogs() {
-            if (pendingBalance > 0.0001) {
-                dogsBalance += pendingBalance;
-                pendingBalance = 0;
-                updateUI();
-                autoSave();
-                alert("Claim Successful!");
-            }
+            dogsBalance += pendingBalance;
+            pendingBalance = 0;
+            updateUI();
+            autoSave();
         }
 
-        function processWithdraw() {
-            if (dogsBalance >= 50) {
-                dogsBalance -= 50;
-                updateUI();
-                autoSave();
-                alert("Withdraw Request Sent!");
-            } else { alert("Need 50 DOGS!"); }
+        function copyRef() {
+            const refLink = "https://alimran6022.github.io/dogs-miner-app/?ref=" + userId;
+            navigator.clipboard.writeText(refLink).then(() => {
+                alert("Link Copied!");
+            });
         }
 
-        // --- সার্ভার ডাটা হ্যান্ডলিং (ব্যালেন্স সুন্য হবে না) ---
         function autoSave() {
             if (userId === "") return;
             fetch(`${SERVER_URL}/update`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: userId,
-                    dogs: dogsBalance.toFixed(4),
-                    gh: ghPower,
-                    refs: refCount
-                })
-            }).then(() => { document.getElementById('sync-status').innerText = "Synced"; });
+                body: JSON.stringify({ id: userId, dogs: dogsBalance.toFixed(4), gh: ghPower, refs: spinCount })
+            });
         }
 
         function loadUserData() {
-            fetch(`${SERVER_URL}/status/${userId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.dogs) {
-                    dogsBalance = parseFloat(data.dogs);
+            fetch(`${SERVER_URL}/status/${userId}`).then(res => res.json()).then(data => {
+                if (data) {
+                    dogsBalance = parseFloat(data.dogs) || 0;
                     ghPower = data.gh || 100;
-                    refCount = data.refs || 0;
+                    spinCount = data.refs || 0;
                     updateUI();
-                    alert("Welcome Back! Data Loaded.");
                 }
-            }).catch(e => console.log("New Account Created"));
+            });
         }
 
         function updateUI() {
             document.getElementById('dogs-balance').innerText = dogsBalance.toFixed(4);
             document.getElementById('pending-balance').innerText = pendingBalance.toFixed(4);
             document.getElementById('gh-power').innerText = ghPower;
-            document.getElementById('ref-count').innerText = refCount;
+            document.getElementById('spin-count').innerText = spinCount;
         }
-
-        setInterval(autoSave, 20000); // ২০ সেকেন্ড পর পর সেভ
     </script>
 </body>
 </html>
