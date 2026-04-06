@@ -21,8 +21,9 @@
     <button onclick="handleAuth('login')" style="background:orange; padding:10px 20px; border-radius:5px;">Login</button>
     <p style="color:gray; font-size:12px; margin-top:10px;" onclick="handleAuth('signup')">New user? Create Account</p>
 </div>
-    
+    <p style="color:gray; font-size:12px; margin-top:10px; cursor:pointer;" onclick="handleAuth()">New user? Create Account</p>
     <div class="header">
+        
         <h1>DOGS MINER</h1>
     </div>
 
@@ -157,6 +158,26 @@ function processWithdraw() {
             let link = "https://t.me/your_bot?start=" + userId;
             alert("Referral link copied! (250 GH per ref)");
         }
+function handleAuth() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('auth-msg');
+
+    if (email.includes('@') && password.length >= 6) {
+        // ইমেইল থেকে আইডি তৈরি (যাতে ডাটাবেসে সেভ হয়)
+        userId = email.replace(/[^a-zA-Z0-9]/g, ""); 
+        
+        // লগইন স্ক্রিন সরিয়ে গেম ওপেন করা
+        document.getElementById('login-screen').style.display = 'none';
+        
+        // সার্ভার থেকে পুরাতন ব্যালেন্স থাকলে তা নিয়ে আসা
+        loadUserData(); 
+        
+        alert("Login Successful!");
+    } else {
+        msg.innerText = "Error: Use a valid email & 6+ character password.";
+    }
+}
     </script>
 </body>
 </html>
