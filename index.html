@@ -9,10 +9,11 @@
         .container { padding: 15px; }
         .balance-card { background: linear-gradient(145deg, #1a1a1a, #2a2a2a); padding: 20px; border-radius: 20px; margin: 15px; border: 1px solid #f39c12; }
         #dogs-balance { font-size: 35px; color: #f39c12; font-weight: bold; }
-        button { width: 95%; padding: 15px; margin: 8px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; }
+        button { width: 95%; padding: 15px; margin: 8px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; }
         .btn-claim { background: #27ae60; color: white; }
         .btn-ad { background: #8e44ad; color: white; }
         .btn-spin { background: #e67e22; color: white; }
+        .btn-withdraw { background: #2980b9; color: white; }
         .btn-ref { background: #34495e; color: white; }
         input { width: 85%; padding: 15px; margin: 10px; border-radius: 10px; background: #222; color: white; border: 1px solid #444; }
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0b0b; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -22,6 +23,7 @@
 
     <div id="login-screen" style="display: none;">
         <h2 style="color: #f39c12;">Dogs Miner Login</h2>
+        <p style="color: #888;">Join now to get 50 DOGS Bonus!</p>
         <input type="email" id="email" placeholder="Enter Email">
         <input type="password" id="password" placeholder="Enter Password">
         <button style="background: #f39c12; color: white;" onclick="handleAuth()">START MINING</button>
@@ -31,7 +33,7 @@
         <h2 style="color: #f39c12;">DOGS MINER PRO</h2>
         
         <div class="balance-card">
-            <p style="margin:0;">Total Balance</p>
+            <p style="margin:0;">Total Balance (TON Network)</p>
             <div id="dogs-balance">0.0000</div>
             <p style="font-size: 13px; color: #27ae60;">Mining: +<span id="pending-balance">0.0000</span></p>
         </div>
@@ -42,9 +44,10 @@
         </div>
 
         <button class="btn-ad" onclick="watchAd()">📺 WATCH AD (Get 1 Spin)</button>
-        <button class="btn-spin" onclick="luckySpin()">🎰 SPIN (Win GH Power)</button>
-        <button class="btn-claim" onclick="claimDogs()">📥 CLAIM DOGS</button>
-        <button class="btn-ref" onclick="copyRef()">🔗 COPY REFERRAL LINK</button>
+        <button class="btn-spin" onclick="luckySpin()">🎰 SPIN (Win 2, 5, 10, 15 GH)</button>
+        <button class="btn-claim" onclick="claimDogs()">📥 CLAIM MINING</button>
+        <button class="btn-withdraw" onclick="processWithdraw()">📤 WITHDRAW (Min 50 DOGS)</button>
+        <button class="btn-ref" onclick="copyRef()">🔗 COPY REFERRAL (+250 GH)</button>
         
         <p id="msg" style="color: yellow; font-size: 14px; margin-top: 10px;"></p>
     </div>
@@ -62,13 +65,26 @@
             else loadUserData();
         };
 
+        // লগইন ও ৫০ ডগস বোনাস
         function handleAuth() {
             const email = document.getElementById('email').value;
             if (email.includes('@')) {
                 userId = email.replace(/[^a-zA-Z0-9]/g, "");
                 localStorage.setItem('dogs_user_id', userId);
                 document.getElementById('login-screen').style.display = 'none';
-                loadUserData();
+                
+                // নতুন ইউজার হলে ৫০ ডগস বোনাস চেক
+                fetch(`${SERVER_URL}/status/${userId}`).then(res => res.json()).then(data => {
+                    if (!data || !data.dogs) {
+                        dogsBalance = 50.0; // জয়েনিং বোনাস
+                        ghPower = 100;
+                        saveToServer();
+                        updateUI();
+                        alert("Welcome! You received 50 DOGS Bonus.");
+                    } else {
+                        loadUserData();
+                    }
+                });
             }
         }
 
@@ -77,25 +93,24 @@
             setTimeout(() => {
                 spinCount += 1;
                 updateUI();
-                autoSave();
-                document.getElementById('msg').innerText = "Ad Finished! You got 1 Lucky Spin.";
+                saveToServer();
+                document.getElementById('msg').innerText = "Ad Finished! 1 Spin added.";
             }, 3000);
         }
 
         function luckySpin() {
             if (spinCount > 0) {
                 spinCount--;
-                const ghPrizes = [15, 10, 5, 2];
-                const winGH = ghPrizes[Math.floor(Math.random() * ghPrizes.length)];
+                const prizes = [15, 10, 5, 2];
+                const winGH = prizes[Math.floor(Math.random() * prizes.length)];
                 ghPower += winGH;
                 updateUI();
-                autoSave();
+                saveToServer();
                 document.getElementById('msg').innerText = "Won " + winGH + " GH Power!";
-            } else {
-                alert("No spins! Watch an Ad first.");
-            }
+            } else { alert("Watch Ad for Spins!"); }
         }
 
+        // রেট: ১০০k GH = ২০k Dogs/Day
         setInterval(() => {
             if (userId !== "") {
                 let dogsPerSec = (ghPower / 100000) * (20000 / 86400); 
@@ -108,17 +123,26 @@
             dogsBalance += pendingBalance;
             pendingBalance = 0;
             updateUI();
-            autoSave();
+            saveToServer();
+        }
+
+        function processWithdraw() {
+            if (dogsBalance >= 50) {
+                let finalAmount = dogsBalance - 10; // ১০ ডগস ফি
+                alert(`Withdrawal Request Sent!\nAmount: ${dogsBalance} DOGS\nFee: 10 DOGS\nYou will receive: ${finalAmount} DOGS (TON Network)`);
+                dogsBalance = 0;
+                updateUI();
+                saveToServer();
+            } else { alert("Minimum 50 DOGS required!"); }
         }
 
         function copyRef() {
-            const refLink = "https://alimran6022.github.io/dogs-miner-app/?ref=" + userId;
-            navigator.clipboard.writeText(refLink).then(() => {
-                alert("Link Copied!");
-            });
+            const refLink = `https://alimran6022.github.io/dogs-miner-app/?ref=${userId}`;
+            navigator.clipboard.writeText(refLink);
+            alert("Referral Link Copied! Share to get 250 GH.");
         }
 
-        function autoSave() {
+        function saveToServer() {
             if (userId === "") return;
             fetch(`${SERVER_URL}/update`, {
                 method: 'POST',
@@ -144,6 +168,8 @@
             document.getElementById('gh-power').innerText = ghPower;
             document.getElementById('spin-count').innerText = spinCount;
         }
+
+        setInterval(saveToServer, 20000); // অটো সেভ
     </script>
 </body>
 </html>
