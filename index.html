@@ -3,207 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Dogs Coin Miner</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Dogs Miner - Earn Dogs Coin</title>
     <style>
-        body { font-family: 'Arial', sans-serif; background: #000; color: white; text-align: center; margin: 0; padding-bottom: 80px; }
-        .header { background: #1a1a1a; padding: 15px; border-bottom: 2px solid #f3ba2f; display: flex; justify-content: space-between; align-items: center; }
-        .balance-box { background: linear-gradient(180deg, #121212, #222); padding: 20px; border-radius: 20px; margin: 15px; border: 1px solid #f3ba2f; }
-        .gh-display { color: #f3ba2f; font-size: 22px; font-weight: bold; }
-        .pending-box { font-size: 28px; color: #f3ba2f; font-weight: bold; margin: 10px 0; }
-        .wallet-box { font-size: 18px; color: #fff; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 15px; }
-        button { background: #f3ba2f; color: black; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .btn-claim { background: #00ff00; padding: 8px 20px; margin-top: 5px; border-radius: 8px; font-size: 14px; }
-        .btn-full { grid-column: span 2; margin-top: 5px; }
-        .btn-refer { background: #1da1f2; color: white; }
-        .btn-withdraw { background: #2b2b2b; color: #f3ba2f; border: 1px solid #f3ba2f; }
-        button:disabled { background: #555; color: #aaa; cursor: not-allowed; }
-
-        .popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
-        .popup-content { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 2px solid #f3ba2f; width: 85%; text-align: center; }
-        input { width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px; margin: 10px 0; box-sizing: border-box; }
-        #wheel { width: 120px; height: 120px; border: 5px dashed #f3ba2f; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 3s cubic-bezier(0.1, 0, 0.1, 1); }
+        body { font-family: Arial, sans-serif; background-color: #121212; color: white; text-align: center; margin: 0; }
+        .header { background: #1e1e1e; padding: 20px; border-bottom: 2px solid #f3ba2f; }
+        .balance-container { margin: 20px; padding: 20px; background: #1e1e1e; border-radius: 15px; }
+        .stats { display: flex; justify-content: space-around; margin-top: 10px; font-size: 14px; }
+        .btn { background: #f3ba2f; color: black; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 80%; margin: 10px; }
+        .spin-wheel { width: 200px; height: 200px; border: 5px solid #f3ba2f; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; transition: transform 3s cubic-bezier(0.2, 0, 0.2, 1); }
+        .popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e1e1e; padding: 20px; border-radius: 15px; border: 2px solid #f3ba2f; z-index: 100; width: 80%; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <span>Status: 🟢 Mining</span>
-    <button onclick="window.open('https://t.me/freeDOGSminer_bot','_blank')" style="padding:5px 10px; font-size:12px;">Payment Channel</button>
-</div>
+    <div class="header">
+        <h1>DOGS MINER</h1>
+    </div>
 
-<div class="balance-box">
-    <p style="margin:0;">Mining Power: <span class="gh-display" id="gh-val">50</span> GH</p>
-    <p style="font-size: 11px; color: #aaa; margin-top: 10px;">Pending DOGS</p>
-    <div class="pending-box" id="pending-dogs">0.000000</div>
-    <button class="btn-claim" onclick="claimRewards()">Claim to Wallet</button>
-    <div class="wallet-box">Wallet Balance: <span id="wallet-val">0.00</span> DOGS</div>
-</div>
+    <div class="balance-container">
+        <h2><span id="dogs-balance">0.0000</span> DOGS</h2>
+        <div class="stats">
+            <div>⚡ Power: <span id="gh-power">100</span> GH</div>
+            <div>👥 Refs: <span id="ref-count">0</span></div>
+        </div>
+    </div>
 
-<div class="btn-grid">
-    <button id="hourly-btn" onclick="hourlyClaim()">🎁 Hourly Free (5 GH)</button>
-    <button onclick="openSpin()">🎡 Lucky Spin (1 Ad)</button>
-    <button class="btn-full btn-refer" onclick="copyReferral()">👥 Refer Friend (+200 GH)</button>
-    <button class="btn-full btn-withdraw" onclick="openWithdraw()">💰 Withdraw (TON Network)</button>
-</div>
+    <div class="spin-section">
+        <div class="spin-wheel" id="wheel">SPIN</div>
+        <button class="btn" onclick="startSpin()">Watch Ad to Spin</button>
+    </div>
 
-<div id="spin-popup" class="popup"><div class="popup-content"><h2 style="color:#f3ba2f">Lucky Spin</h2><div id="wheel">?</div><button onclick="startSpin()" id="spin-btn" style="width:100%">Watch Ad & Spin</button><button onclick="closePopup('spin-popup')" style="background:none; color:red; margin-top:10px;">Close</button></div></div>
-<div id="withdraw-popup" class="popup"><div class="popup-content"><h2 style="color:#f3ba2f">Withdraw</h2><p style="font-size:12px;">Min: 100 DOGS | Fee: 10 DOGS</p><input type="text" id="wallet-addr" placeholder="Enter TON Wallet Address"><button onclick="processWithdraw()" style="width:100%">Submit Withdrawal</button><button onclick="closePopup('withdraw-popup')" style="background:none; color:red; margin-top:10px;">Cancel</button></div></div>
+    <button class="btn" onclick="showPopup('withdraw-popup')">Withdraw</button>
+    <button class="btn" style="background:#444; color:white;" onclick="copyReferral()">Invite Friends (250 GH)</button>
 
-<script>
-    const tele = window.Telegram.WebApp;
-    // আপনার ফোনের বর্তমান IP (Termux-এ যা দেখাচ্ছে)
-    const serverUrl = "http://const serverUrl = "https://আপনার-লিঙ্ক.lhr.life"; 
-    
-    // User ID নিশ্চিত করা
-    const userId = tele.initDataUnsafe?.user?.id ? String(tele.initDataUnsafe.user.id) : "guest_user";
+    <div id="withdraw-popup" class="popup">
+        <h3>Withdraw DOGS</h3>
+        <p>Min: 50 DOGS | Fee: 10 DOGS</p>
+        <input type="text" placeholder="Enter TON Wallet Address" style="width:90%; padding:10px; margin-bottom:10px;">
+        <button class="btn" onclick="processWithdraw()">Confirm Withdraw</button>
+        <button class="btn" style="background:red;" onclick="closePopup('withdraw-popup')">Close</button>
+    </div>
 
-    let ghPower = 50;
-    let pendingDogs = 0.0;
-    let walletBalance = 0.0;
-    let lastClaimTime = 0;
-    let referrals = 0;
+    <script>
+        let dogsBalance = 0;
+        let ghPower = 100; // Starting Power
+        let refCount = 0;
+        let userId = Math.floor(Math.random() * 1000000); // Temporary ID
 
-    const dogsPerDayPer100k = 20000; 
-    const dogsPerSecPer100k = dogsPerDayPer100k / 86400;
+        // Mining Logic (100k GH = 20k Dogs/Day)
+        setInterval(() => {
+            let dogsPerSec = (ghPower / 100000) * (20000 / 86400);
+            dogsBalance += dogsPerSec;
+            document.getElementById('dogs-balance').innerText = dogsBalance.toFixed(4);
+        }, 1000);
 
-    // ১. সার্ভার থেকে ডাটা লোড (অ্যাপ ওপেন হওয়ার সাথে সাথে)
-    async function loadData() {
-        try {
-            const response = await fetch(`${serverUrl}/get_data?id=${userId}`);
-            const data = await response.json();
-            if (data && data.id) {
-                walletBalance = parseFloat(data.dogs) || 0;
-                referrals = parseInt(data.ref_count) || 0;
-                // GH Power ক্যালকুলেশন: বেস ৫০ + রেফার বোনাস + অন্যান্য বোনাস
-                ghPower = 50 + (referrals * 200) + (parseInt(data.bonus_gh) || 0);
-                updateUI();
-                console.log("Data loaded from Termux Server!");
+        function startSpin() {
+            // Later we will add Ad here
+            let wheel = document.getElementById('wheel');
+            let randomDeg = Math.floor(Math.random() * 360) + 1800;
+            wheel.style.transform = `rotate(${randomDeg}deg)`;
+            
+            setTimeout(() => {
+                let wins = [1, 2, 5, 10, 15];
+                let wonVal = wins[Math.floor(Math.random() * wins.length)];
+                ghPower += wonVal;
+                alert("Congratulations! You won " + wonVal + " GH Power!");
+                document.getElementById('gh-power').innerText = ghPower;
+            }, 3500);
+        }
+
+        function processWithdraw() {
+            if (dogsBalance < 50) {
+                alert("Minimum withdraw is 50 DOGS!");
+                return;
             }
-        } catch (e) { 
-            console.log("Server not found. Check if Termux is running."); 
+            alert("Request Sent! You will receive " + (dogsBalance - 10).toFixed(2) + " DOGS within 12 hours.");
         }
-    }
 
-    // ২. সার্ভারে ডাটা সেভ করার ফাংশন
-    async function autoSave() {
-        if (userId === "guest_user") return;
+        function showPopup(id) { document.getElementById(id).style.display = 'block'; }
+        function closePopup(id) { document.getElementById(id).style.display = 'none'; }
         
-        const bonus = ghPower - (referrals * 200) - 50;
-        const body = { 
-            id: userId, 
-            dogs: walletBalance, 
-            ref_count: referrals,
-            bonus_gh: bonus > 0 ? bonus : 0 
-        };
-        try {
-            await fetch(`${serverUrl}/update`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            });
-            console.log("Auto-save successful!");
-        } catch (e) { 
-            console.log("Auto-save failed. Is Termux running?");
+        function copyReferral() {
+            let link = "https://t.me/your_bot?start=" + userId;
+            alert("Referral link copied! (250 GH per ref)");
         }
-    }
-
-    // ৩. মাইনিং ইঞ্জিন
-    setInterval(() => {
-        let earned = (ghPower / 100000) * dogsPerSecPer100k;
-        pendingDogs += earned;
-        document.getElementById('pending-dogs').innerText = pendingDogs.toFixed(6);
-        updateTimer();
-    }, 1000);
-
-    function updateUI() {
-        document.getElementById('gh-val').innerText = ghPower;
-        document.getElementById('wallet-val').innerText = walletBalance.toFixed(2);
-    }
-
-    // ক্লেইম করলে সাথে সাথে সেভ হবে
-    function claimRewards() {
-        if (pendingDogs > 0.0001) {
-            walletBalance += pendingDogs;
-            pendingDogs = 0;
-            updateUI();
-            autoSave(); // সাথে সাথে সার্ভারে সেভ
-            alert("Success: Balance added to wallet!");
-        }
-    }
-
-    function hourlyClaim() {
-        const now = Date.now();
-        if (now - lastClaimTime >= 3600000) {
-            ghPower += 5;
-            lastClaimTime = now;
-            updateUI();
-            autoSave();
-            alert("Bonus: +5 GH added!");
-        }
-    }
-
-    function updateTimer() {
-        const hourlyBtn = document.getElementById('hourly-btn');
-        const timeLeft = 3600000 - (Date.now() - lastClaimTime);
-        if (lastClaimTime !== 0 && timeLeft > 0) {
-            hourlyBtn.disabled = true;
-            let mins = Math.floor(timeLeft / 60000);
-            let secs = Math.floor((timeLeft % 60000) / 1000);
-            hourlyBtn.innerText = `⏳ ${mins}m ${secs}s`;
-        } else {
-            hourlyBtn.disabled = false;
-            hourlyBtn.innerText = "🎁 Hourly Free (5 GH)";
-        }
-    }
-
-    function copyReferral() {
-        const botUsername = "freeDOGSminer_bot"; 
-        const link = `https://t.me/${botUsername}?start=${userId}`;
-        navigator.clipboard.writeText(link).then(() => {
-            alert("Referral Link Copied!");
-        });
-    }
-
-    function openSpin() { document.getElementById('spin-popup').style.display = 'flex'; }
-    function openWithdraw() { document.getElementById('withdraw-popup').style.display = 'flex'; }
-    function closePopup(id) { document.getElementById(id).style.display = 'none'; }
-
-    function startSpin() {
-        let deg = Math.floor(Math.random() * 360) + 1440;
-        document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
-        setTimeout(() => {
-            let wins = [1, 2, 5, 10, 15];
-            let won = wins[Math.floor(Math.random() * wins.length)];
-            ghPower += won;
-            updateUI();
-            autoSave();
-            alert("Spin Win: " + won + " GH Power!");
-            document.getElementById('wheel').style.transform = `rotate(0deg)`;
-            closePopup('spin-popup');
-        }, 3100);
-    }
-
-    function processWithdraw() {
-        let addr = document.getElementById('wallet-addr').value;
-        if(addr.length < 10) return alert("Error: Invalid Wallet Address");
-        if(walletBalance < 100) return alert("Error: Minimum 100 DOGS required");
-        alert("Success: Withdrawal Request Sent!");
-        walletBalance -= 100;
-        updateUI();
-        autoSave();
-        closePopup('withdraw-popup');
-    }
-
-    window.onload = () => {
-        tele.ready();
-        tele.expand();
-        loadData(); // অ্যাপ ওপেন হলে সার্ভার থেকে পুরনো ব্যালেন্স আনবে
-        setInterval(autoSave, 15000); // ১৫ সেকেন্ড পরপর অটো ব্যাকআপ
-    };
-
-</script>
-
+    </script>
 </body>
-    </html>
+</html>
