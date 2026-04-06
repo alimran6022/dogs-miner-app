@@ -50,6 +50,22 @@
         let refCount = 0;
         let userId = Math.floor(Math.random() * 1000000); // Temporary ID
 
+    const SERVER_URL = "https://dogs-miner-app.onrender.com";
+
+    function autoSave() {
+        fetch(`${SERVER_URL}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: userId,
+                dogs: dogsBalance.toFixed(4),
+                gh: ghPower,
+                refs: refCount
+            })
+        });
+    }
+    setInterval(autoSave, 30000);
+        
         // Mining Logic (100k GH = 20k Dogs/Day)
         setInterval(() => {
             let dogsPerSec = (ghPower / 100000) * (20000 / 86400);
